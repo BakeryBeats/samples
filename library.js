@@ -1,38 +1,39 @@
-// Supabase Library Management (500MB FREE database)
-
 let allSamples = [];
 
 async function loadSamples() {
   try {
     showLoading(true);
-    const user = supabase.auth.user();
-    
+    // Supabase v2 fix:
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast('Not logged in', 'error');
+      return;
+    }
     const { data, error } = await supabase
       .from('samples')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
-
     if (error) throw error;
-    
     allSamples = data || [];
     displaySamples(allSamples);
   } catch (error) {
     console.error('Error loading samples:', error);
-    showToast('Error loading samples', 'error');
+    showToast('Error loading samples: ' + error.message, 'error');
   } finally {
     showLoading(false);
   }
 }
 
+document.getElementById('searchInput').addEventListener('input', filterSamples);
+document.getElementById('genreFilter').addEventListener('change', filterSamples);
+
 function displaySamples(samples) {
   const grid = document.getElementById('samplesGrid');
-  
   if (samples.length === 0) {
     grid.innerHTML = '<div class="empty-state"><p>📭 No samples yet. Upload your first sample!</p></div>';
     return;
   }
-
   grid.innerHTML = samples.map(sample => `
     <div class="sample-card">
       <div class="sample-name" title="${sample.filename}">${sample.filename}</div>
@@ -57,21 +58,15 @@ function playSample(url) {
 
 async function deleteSample(sampleId) {
   if (!confirm('Delete this sample?')) return;
-
   try {
     showLoading(true);
     const sample = allSamples.find(s => s.id === sampleId);
-    
-    // Delete file from storage
     const filepath = sample.file_url.split('/').slice(-2).join('/');
     await supabase.storage.from('samples').remove([filepath]);
-    
-    // Delete record from database
     const { error } = await supabase
       .from('samples')
       .delete()
       .eq('id', sampleId);
-
     if (error) throw error;
     showToast('Sample deleted', 'success');
     await loadSamples();
@@ -83,19 +78,13 @@ async function deleteSample(sampleId) {
   }
 }
 
-// Search and filter
-document.getElementById('searchInput').addEventListener('input', filterSamples);
-document.getElementById('genreFilter').addEventListener('change', filterSamples);
-
 function filterSamples() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const genre = document.getElementById('genreFilter').value;
-
   const filtered = allSamples.filter(sample => {
     const matchSearch = sample.filename.toLowerCase().includes(search);
     const matchGenre = genre === '' || sample.genre === genre;
     return matchSearch && matchGenre;
   });
-
   displaySamples(filtered);
 }
