@@ -1,4 +1,11 @@
-// Supabase Authentication (Free Email/Password)
+// Supabase Authentication - Wait for initialization
+
+function getSupabase() {
+  if (!window.supabase) {
+    throw new Error('Supabase not initialized yet');
+  }
+  return window.supabase;
+}
 
 function showAuthSection() {
   document.getElementById('authSection').style.display = 'flex';
@@ -8,95 +15,113 @@ function showAuthSection() {
 function showAppSection() {
   document.getElementById('authSection').style.display = 'none';
   document.getElementById('appSection').style.display = 'flex';
+  const supabase = getSupabase();
   const user = supabase.auth.user();
   document.getElementById('userEmail').textContent = user ? user.email : 'User';
 }
 
-// Toggle forms
-document.getElementById('showSignup').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('signupForm').style.display = 'flex';
-});
-
-document.getElementById('showLogin').addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('loginForm').style.display = 'flex';
-  document.getElementById('signupForm').style.display = 'none';
-});
-
-// Login
-document.getElementById('loginBtn').addEventListener('click', async () => {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-
-  if (!email || !password) {
-    showToast('Please fill in all fields', 'error');
+// Wait for Supabase to load
+function initAuth() {
+  if (!window.supabase) {
+    setTimeout(initAuth, 100);
     return;
   }
 
-  try {
-    showLoading(true);
-    const { user, error } = await supabase.auth.signIn({ email, password });
-    if (error) throw error;
-    showToast('Logged in successfully!', 'success');
-  } catch (error) {
-    showToast('Login failed: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
-});
+  const supabase = window.supabase;
 
-// Signup
-document.getElementById('signupBtn').addEventListener('click', async () => {
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const password2 = document.getElementById('signupPassword2').value;
+  // Toggle forms
+  document.getElementById('showSignup')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'flex';
+  });
 
-  if (!email || !password || !password2) {
-    showToast('Please fill in all fields', 'error');
-    return;
-  }
+  document.getElementById('showLogin')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('loginForm').style.display = 'flex';
+    document.getElementById('signupForm').style.display = 'none';
+  });
 
-  if (password !== password2) {
-    showToast('Passwords do not match', 'error');
-    return;
-  }
+  // Login
+  document.getElementById('loginBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
 
-  if (password.length < 6) {
-    showToast('Password must be at least 6 characters', 'error');
-    return;
-  }
+    if (!email || !password) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
 
-  try {
-    showLoading(true);
-    const { user, error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-    showToast('Account created! Check your email to confirm.', 'success');
-  } catch (error) {
-    showToast('Signup failed: ' + error.message, 'error');
-  } finally {
-    showLoading(false);
-  }
-});
+    try {
+      showLoading(true);
+      const { user, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showToast('Logged in successfully!', 'success');
+    } catch (error) {
+      showToast('Login failed: ' + error.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  });
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    showToast('Logged out successfully', 'success');
-  } catch (error) {
-    showToast('Logout failed: ' + error.message, 'error');
-  }
-});
+  // Signup
+  document.getElementById('signupBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const password2 = document.getElementById('signupPassword2').value;
 
-// Auth state listener
-supabase.auth.onAuthStateChange((event, session) => {
-  if (session) {
-    showAppSection();
-    loadSamples();
-  } else {
-    showAuthSection();
-  }
-});
+    if (!email || !password || !password2) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
+
+    if (password !== password2) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    try {
+      showLoading(true);
+      const { user, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      showToast('Account created! Check your email to confirm.', 'success');
+    } catch (error) {
+      showToast('Signup failed: ' + error.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  });
+
+  // Logout
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      showToast('Logged out successfully', 'success');
+    } catch (error) {
+      showToast('Logout failed: ' + error.message, 'error');
+    }
+  });
+
+  // Auth state listener
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      showAppSection();
+      loadSamples();
+    } else {
+      showAuthSection();
+    }
+  });
+}
+
+// Initialize auth when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuth);
+} else {
+  initAuth();
+}
