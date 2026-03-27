@@ -1,4 +1,4 @@
-// Authentication functions
+// Supabase Authentication (Free Email/Password)
 
 function showAuthSection() {
   document.getElementById('authSection').style.display = 'flex';
@@ -8,10 +8,11 @@ function showAuthSection() {
 function showAppSection() {
   document.getElementById('authSection').style.display = 'none';
   document.getElementById('appSection').style.display = 'flex';
-  document.getElementById('userEmail').textContent = auth.currentUser.email;
+  const user = supabase.auth.user();
+  document.getElementById('userEmail').textContent = user ? user.email : 'User';
 }
 
-// Toggle between login and signup forms
+// Toggle forms
 document.getElementById('showSignup').addEventListener('click', (e) => {
   e.preventDefault();
   document.getElementById('loginForm').style.display = 'none';
@@ -36,7 +37,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 
   try {
     showLoading(true);
-    await auth.signInWithEmailAndPassword(email, password);
+    const { user, error } = await supabase.auth.signIn({ email, password });
+    if (error) throw error;
     showToast('Logged in successfully!', 'success');
   } catch (error) {
     showToast('Login failed: ' + error.message, 'error');
@@ -68,8 +70,9 @@ document.getElementById('signupBtn').addEventListener('click', async () => {
 
   try {
     showLoading(true);
-    await auth.createUserWithEmailAndPassword(email, password);
-    showToast('Account created successfully!', 'success');
+    const { user, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    showToast('Account created! Check your email to confirm.', 'success');
   } catch (error) {
     showToast('Signup failed: ' + error.message, 'error');
   } finally {
@@ -80,7 +83,8 @@ document.getElementById('signupBtn').addEventListener('click', async () => {
 // Logout
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try {
-    await auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     showToast('Logged out successfully', 'success');
   } catch (error) {
     showToast('Logout failed: ' + error.message, 'error');
@@ -88,8 +92,8 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 
 // Auth state listener
-auth.onAuthStateChanged((user) => {
-  if (user) {
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session) {
     showAppSection();
     loadSamples();
   } else {
