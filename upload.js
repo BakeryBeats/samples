@@ -1,4 +1,4 @@
-// Upload functionality
+// Supabase Storage Upload (1GB FREE)
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -29,7 +29,6 @@ dropZone.addEventListener('drop', (e) => {
   }
   
   selectedFiles = files;
-  fileInput.files = e.dataTransfer.items;
   updateDropZoneText();
   uploadBtn.disabled = false;
 });
@@ -59,51 +58,50 @@ uploadBtn.addEventListener('click', async () => {
   document.getElementById('uploadProgress').style.display = 'block';
 
   let successCount = 0;
-  let failCount = 0;
+  const user = supabase.auth.user();
 
   for (const file of selectedFiles) {
     try {
       showLoading(true);
       
-      // Create unique filename
-      const timestamp = Date.now();
-      const filename = `${auth.currentUser.uid}/${genre}/${timestamp}-${file.name}`;
+      // Upload to Supabase Storage
+      const filename = `${user.id}/${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('samples')
+        .upload(filename, file);
       
-      // Upload to storage
-      const storageRef = storage.ref(filename);
-      await storageRef.put(file);
-      
-      // Get download URL
-      const url = await storageRef.getDownloadURL();
-      
-      // Save metadata to Firestore
-      await db.collection('samples').add({
-        userId: auth.currentUser.uid,
-        filename: file.name,
-        genre: genre,
-        bpm: bpm,
-        style: style,
-        size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-        url: url,
-        uploadedAt: new Date(),
-        type: file.type
-      });
-      
+      if (error) throw error;
+
+      // Get public URL
+      const { publicUrl } = supabase.storage
+        .from('samples')
+        .getPublicUrl(filename);
+
+      // Save metadata to database
+      const { error: dbError } = await supabase
+        .from('samples')
+        .insert([{
+          user_id: user.id,
+          filename: file.name,
+          genre: genre,
+          bpm: bpm,
+          style: style,
+          size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+          file_url: publicUrl,
+          created_at: new Date().toISOString()
+        }]);
+
+      if (dbError) throw dbError;
       successCount++;
     } catch (error) {
       console.error('Upload error:', error);
-      failCount++;
     }
   }
 
   showLoading(false);
   document.getElementById('uploadProgress').style.display = 'none';
   
-  if (failCount === 0) {
-    showToast(`Successfully uploaded ${successCount} sample(s)!`, 'success');
-  } else {
-    showToast(`Uploaded ${successCount}, failed ${failCount}`, 'error');
-  }
+  showToast(`Successfully uploaded ${successCount} sample(s)!`, 'success');
 
   // Reset form
   selectedFiles = [];
