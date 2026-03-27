@@ -1,27 +1,25 @@
-// Library management
+// Supabase Library Management (500MB FREE database)
 
 let allSamples = [];
 
 async function loadSamples() {
   try {
     showLoading(true);
-    const snapshot = await db.collection('samples')
-      .where('userId', '==', auth.currentUser.uid)
-      .orderBy('uploadedAt', 'desc')
-      .get();
+    const user = supabase.auth.user();
+    
+    const { data, error } = await supabase
+      .from('samples')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-    allSamples = [];
-    snapshot.forEach(doc => {
-      allSamples.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-
+    if (error) throw error;
+    
+    allSamples = data || [];
     displaySamples(allSamples);
   } catch (error) {
     console.error('Error loading samples:', error);
-    showToast('Error loading samples: ' + error.message, 'error');
+    showToast('Error loading samples', 'error');
   } finally {
     showLoading(false);
   }
@@ -45,8 +43,8 @@ function displaySamples(samples) {
       </div>
       <div class="sample-size">Size: ${sample.size}</div>
       <div class="sample-controls">
-        <button class="btn btn-primary" onclick="playSample('${sample.url}')">▶ Play</button>
-        <button class="btn btn-danger" onclick="deleteSample('${sample.id}')">🗑</button>
+        <button class="btn btn-primary" onclick="playSample('${sample.file_url}')">▶ Play</button>
+        <button class="btn btn-danger" onclick="deleteSample(${sample.id})">🗑</button>
       </div>
     </div>
   `).join('');
@@ -54,7 +52,7 @@ function displaySamples(samples) {
 
 function playSample(url) {
   const audio = new Audio(url);
-  audio.play().catch(err => showToast('Error playing audio: ' + err.message, 'error'));
+  audio.play().catch(err => showToast('Error playing audio', 'error'));
 }
 
 async function deleteSample(sampleId) {
@@ -64,18 +62,22 @@ async function deleteSample(sampleId) {
     showLoading(true);
     const sample = allSamples.find(s => s.id === sampleId);
     
-    // Delete from storage
-    const storageRef = storage.refFromURL(sample.url);
-    await storageRef.delete();
+    // Delete file from storage
+    const filepath = sample.file_url.split('/').slice(-2).join('/');
+    await supabase.storage.from('samples').remove([filepath]);
     
-    // Delete from Firestore
-    await db.collection('samples').doc(sampleId).delete();
-    
+    // Delete record from database
+    const { error } = await supabase
+      .from('samples')
+      .delete()
+      .eq('id', sampleId);
+
+    if (error) throw error;
     showToast('Sample deleted', 'success');
     await loadSamples();
   } catch (error) {
     console.error('Delete error:', error);
-    showToast('Error deleting sample: ' + error.message, 'error');
+    showToast('Error deleting sample', 'error');
   } finally {
     showLoading(false);
   }
