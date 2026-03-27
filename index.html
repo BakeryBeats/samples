@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BakeryBeats Sample Cloud</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-container">
+      <div class="auth-box">
+        <h1>🎵 BakeryBeats Sample Cloud</h1>
+        <p>Upload, organize and manage your drum samples</p>
+        
+        <div id="loginForm" class="auth-form">
+          <h2>Login</h2>
+          <input type="email" id="loginEmail" placeholder="Email" required>
+          <input type="password" id="loginPassword" placeholder="Password" required>
+          <button id="loginBtn" class="btn btn-primary">Login</button>
+          <p>Don't have an account? <a href="#" id="showSignup">Sign up here</a></p>
+        </div>
+
+        <div id="signupForm" class="auth-form" style="display:none;">
+          <h2>Create Account</h2>
+          <input type="email" id="signupEmail" placeholder="Email" required>
+          <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" required>
+          <input type="password" id="signupPassword2" placeholder="Confirm Password" required>
+          <button id="signupBtn" class="btn btn-primary">Sign Up</button>
+          <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="appSection" class="app-container" style="display:none;">
+      <header>
+        <div class="header-content">
+          <h1>🎵 BakeryBeats Sample Cloud</h1>
+          <div class="header-right">
+            <span id="userEmail" class="user-email"></span>
+            <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Upload Section -->
+        <section class="upload-section">
+          <div class="upload-box">
+            <h2>📤 Upload Samples</h2>
+            <div id="dropZone" class="drop-zone">
+              <p>Drag & drop audio files here or click to browse</p>
+              <input type="file" id="fileInput" multiple accept="audio/*" style="display:none;">
+            </div>
+            <div class="upload-options">
+              <input type="text" id="genreInput" placeholder="Genre (e.g., House, Trap, Jazz)" class="input-field">
+              <input type="number" id="bpmInput" placeholder="BPM (optional)" class="input-field">
+              <input type="text" id="styleInput" placeholder="Style (e.g., Dry, Processed, Analog)" class="input-field">
+              <button id="uploadBtn" class="btn btn-success" disabled>Upload</button>
+            </div>
+            <div id="uploadProgress" class="upload-progress" style="display:none;">
+              <div class="progress-bar"></div>
+              <span class="progress-text">Uploading...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Library Section -->
+        <section class="library-section">
+          <div class="library-header">
+            <h2>📚 Your Sample Library</h2>
+            <div class="filter-controls">
+              <input type="text" id="searchInput" placeholder="Search samples..." class="input-field">
+              <select id="genreFilter" class="input-field">
+                <option value="">All Genres</option>
+                <option value="House">House</option>
+                <option value="Trap">Trap</option>
+                <option value="Hip-Hop">Hip-Hop</option>
+                <option value="Jazz">Jazz</option>
+                <option value="Techno">Techno</option>
+                <option value="Rock">Rock</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="samplesGrid" class="samples-grid">
+            <div class="empty-state">
+              <p>📭 No samples yet. Upload your first sample!</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>BakeryBeats Sample Cloud v1.0 | Made for producers 🎵</p>
+      </footer>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading-spinner" style="display:none;">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+  
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="upload.js"></script>
+  <script src="library.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
