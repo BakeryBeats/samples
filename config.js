@@ -1,21 +1,9 @@
-// Firebase Configuration
-// Replace with your Firebase project credentials from https://firebase.google.com
+// Supabase Configuration (100% FREE!)
+// https://supabase.com -> Create Project -> Copy these keys
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+const SUPABASE_URL = "YOUR_SUPABASE_URL";     // https://xxx.supabase.co
+const SUPABASE_KEY = "YOUR_SUPABASE_KEY";     // anon public key
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Get references
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-console.log('Firebase initialized');
+console.log('Supabase initialized - No costs! 🎉');
