@@ -1,11 +1,4 @@
-// Supabase Authentication - Wait for initialization
-
-function getSupabase() {
-  if (!window.supabase) {
-    throw new Error('Supabase not initialized yet');
-  }
-  return window.supabase;
-}
+// Supabase Authentication - Supabase v2 compatible
 
 function showAuthSection() {
   document.getElementById('authSection').style.display = 'flex';
@@ -15,9 +8,6 @@ function showAuthSection() {
 function showAppSection() {
   document.getElementById('authSection').style.display = 'none';
   document.getElementById('appSection').style.display = 'flex';
-  const supabase = getSupabase();
-  const user = supabase.auth.user();
-  document.getElementById('userEmail').textContent = user ? user.email : 'User';
 }
 
 // Wait for Supabase to load
@@ -54,9 +44,12 @@ function initAuth() {
 
     try {
       showLoading(true);
-      const { user, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       showToast('Logged in successfully!', 'success');
+      // Clear forms
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
     } catch (error) {
       showToast('Login failed: ' + error.message, 'error');
     } finally {
@@ -87,9 +80,13 @@ function initAuth() {
 
     try {
       showLoading(true);
-      const { user, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       showToast('Account created! Check your email to confirm.', 'success');
+      // Clear forms
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPassword').value = '';
+      document.getElementById('signupPassword2').value = '';
     } catch (error) {
       showToast('Signup failed: ' + error.message, 'error');
     } finally {
@@ -108,11 +105,16 @@ function initAuth() {
     }
   });
 
-  // Auth state listener
+  // Auth state listener - This handles showing/hiding sections and loading samples
   supabase.auth.onAuthStateChange((event, session) => {
     if (session) {
       showAppSection();
-      loadSamples();
+      // Update user email
+      if (session.user) {
+        document.getElementById('userEmail').textContent = session.user.email;
+      }
+      // Load samples after a brief delay to ensure app is ready
+      setTimeout(() => loadSamples(), 100);
     } else {
       showAuthSection();
     }
